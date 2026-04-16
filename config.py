@@ -56,7 +56,7 @@ MAX_RISK_PER_TRADE = 0.05
 STOP_LOSS_PCT      = 0.50       # SL fires when sell leg rises 50% above entry
 MAX_TRADES_PER_DAY = 1          # ZEN = 1 active position at a time (positional)
 MAX_LOSS_PER_DAY   = 0.05       # 5% daily loss cap (ZEN avg loss = -4.42%)
-PAPER_MODE         = True       # <-- keep True for testing!
+PAPER_MODE         = False      # False = LIVE via 1LY webhook
 
 # ── ENTRY FILTERS (ZEN Credit Spread rules — pin to pin) ──────────────────
 MIN_CREDIT_POINTS  = 20         # ZEN takes lower credit too — reduced from 30
