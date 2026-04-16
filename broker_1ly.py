@@ -11,11 +11,9 @@
 #   4. This broker sends entry/exit signals to 1LY via webhook
 #   5. 1LY auto-selects ATM at execution time and places orders on Alice Blue
 #
-# Webhook format (exact 1LY sample format — legs sent individually):
-#   Enter leg_1:  {"signal": "entry", "legs": ["leg_1"]}
-#   Enter leg_2:  {"signal": "entry", "legs": ["leg_2"]}
-#   Exit  leg_1:  {"signal": "exit",  "legs": ["leg_1"]}
-#   Exit  leg_2:  {"signal": "exit",  "legs": ["leg_2"]}
+# Webhook format (both legs sent at once — 1LY "All legs" format):
+#   Entry:  {"signal": "entry", "legs": ["leg_1", "leg_2"]}
+#   Exit:   {"signal": "exit",  "legs": ["leg_1", "leg_2"]}
 # =============================================================================
 
 import requests
