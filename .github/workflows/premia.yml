@@ -1,0 +1,32 @@
+name: PREMIA — Daily Trading Bot
+
+on:
+  schedule:
+    - cron: '40 3 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  run-premia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout PREMIA code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run PREMIA Bot
+        env:
+          DHAN_CLIENT_ID:     ${{ secrets.DHAN_CLIENT_ID }}
+          DHAN_ACCESS_TOKEN:  ${{ secrets.DHAN_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          ONELY_WEBHOOK_URL:  ${{ secrets.ONELY_WEBHOOK_URL }}
+        run: python main.py
