@@ -1,19 +1,12 @@
 # =============================================================================
 # broker_1ly.py -- 1LY Options Webhook Broker
 # =============================================================================
-#
-# How it works:
-#   1. You create a Custom Strategy on 1LY platform (https://1lyalgos.inuvest.trade)
-#   2. Define legs:
-#        leg_1 -> SELL | CE | ATM   | Weekly  (sell leg)
-#        leg_2 -> BUY  | CE | ATM+8 | Weekly  (buy hedge, 400 pts above)
-#   3. Copy the webhook URL from 1LY and paste in config.py -> ONELY["webhook_url"]
-#   4. This broker sends entry/exit signals to 1LY via webhook
-#   5. 1LY auto-selects ATM at execution time and places orders on Alice Blue
-#
 # Webhook format (both legs sent at once — 1LY "All legs" format):
 #   Entry:  {"signal": "entry", "legs": ["leg_1", "leg_2"]}
 #   Exit:   {"signal": "exit",  "legs": ["leg_1", "leg_2"]}
+#
+# BEARISH signal → CALL SPREAD → call_webhook_url
+# BULLISH signal → PUT  SPREAD → put_webhook_url
 # =============================================================================
 
 import requests
@@ -25,32 +18,21 @@ log = get_logger("1LYBroker")
 
 
 class OneLYBroker:
-    """
-    Sends entry/exit webhook signals to 1LY Options platform.
-    1LY handles ATM selection, order routing, and execution on Alice Blue.
-    """
 
     def __init__(self):
-        self.webhook_url = config.ONELY["webhook_url"]
-        self.leg_1       = config.ONELY["leg_1"]
-        self.leg_2       = config.ONELY["leg_2"]
-        self.connected   = True
-        self._counter    = 2000
+        self.call_webhook_url = config.ONELY["call_webhook_url"]
+        self.put_webhook_url  = config.ONELY["put_webhook_url"]
+        self.leg_1            = config.ONELY["leg_1"]
+        self.leg_2            = config.ONELY["leg_2"]
+        self.connected        = True
 
-        if "PASTE" in self.webhook_url:
-            log.warning("1LY webhook URL not configured! Paste URL in config.py -> ONELY['webhook_url']")
-            self.connected = False
-        else:
-            log.info(f"1LY Broker ready | webhook configured | legs: {self.leg_1}, {self.leg_2}")
+        log.info(f"1LY Broker ready | CALL webhook configured | legs: {self.leg_1}, {self.leg_2}")
+        log.info(f"1LY Broker ready | PUT  webhook configured | legs: {self.leg_1}, {self.leg_2}")
 
-    def _send_signal(self, signal: str, legs: list) -> bool:
-        """Send entry or exit signal to 1LY webhook."""
-        if not self.connected:
-            log.error("1LY webhook not configured")
-            return False
+    def _send_signal(self, signal: str, legs: list, webhook_url: str) -> bool:
         try:
             payload  = {"signal": signal, "legs": legs}
-            response = requests.post(self.webhook_url, json=payload, timeout=10)
+            response = requests.post(webhook_url, json=payload, timeout=10)
             if response.status_code == 200:
                 log.info(f"1LY webhook OK | signal={signal} legs={legs} | response={response.text[:100]}")
                 return True
@@ -62,17 +44,14 @@ class OneLYBroker:
             return False
 
     def place_spread(self, spread: dict) -> dict:
-        """
-        Send entry signal to 1LY — both legs at once.
-        Format: {"signal": "entry", "legs": ["leg_1", "leg_2"]}
-        """
-        sell = spread["sell_leg"]
-        buy  = spread["buy_leg"]
+        sell        = spread["sell_leg"]
+        buy         = spread["buy_leg"]
+        direction   = spread.get("direction", "")
+        webhook_url = self.call_webhook_url if direction == "BEARISH" else self.put_webhook_url
 
-        log.info(f"1LY ENTRY | {spread['type']} | sending both legs at once...")
-        success = self._send_signal("entry", [self.leg_1, self.leg_2])
+        log.info(f"1LY ENTRY | {spread['type']} | {direction} | sending both legs...")
+        success = self._send_signal("entry", [self.leg_1, self.leg_2], webhook_url)
         status  = "1LY_PLACED" if success else "1LY_FAIL"
-
         log.info(f"1LY ENTRY complete | status={status}")
 
         log_trade({
@@ -89,18 +68,15 @@ class OneLYBroker:
             "max_loss"    : spread["max_loss"],
             "status"      : status,
         })
-
         return {"status": status}
 
     def exit_spread(self, spread: dict, reason: str = "Exit") -> dict:
-        """
-        Send exit signal to 1LY — both legs at once.
-        Format: {"signal": "exit", "legs": ["leg_1", "leg_2"]}
-        """
-        log.info(f"1LY EXIT | Reason: {reason} | sending both legs exit at once...")
-        success = self._send_signal("exit", [self.leg_1, self.leg_2])
-        status  = "1LY_EXITED" if success else "1LY_EXIT_FAIL"
+        direction   = spread.get("direction", "")
+        webhook_url = self.call_webhook_url if direction == "BEARISH" else self.put_webhook_url
 
+        log.info(f"1LY EXIT | {direction} | Reason: {reason} | sending both legs exit...")
+        success = self._send_signal("exit", [self.leg_1, self.leg_2], webhook_url)
+        status  = "1LY_EXITED" if success else "1LY_EXIT_FAIL"
         log.info(f"1LY EXIT complete | status={status}")
 
         log_trade({
@@ -111,14 +87,9 @@ class OneLYBroker:
             "exit_reason": reason,
             "status"     : status,
         })
-
         return {"status": status, "reason": reason}
 
     def get_option_ltp(self, security_id: str) -> float:
-        """
-        1LY manages positions on Alice Blue side.
-        We return 0 here -- P&L monitoring is done via 1LY dashboard.
-        """
         return 0.0
 
     def get_positions(self) -> list:
