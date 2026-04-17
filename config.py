@@ -35,39 +35,46 @@ STRIKE_STEP         = 50
 SPREAD_WIDTH_POINTS = 400
 
 # ── STRATEGY ──────────────────────────────────────────────────────────────
+# ZEN Credit Spread Overnight — pin-to-pin parameters (Stratzy/DhanHQ)
 ALPHA1_LOOKBACK  = 800
 ALPHA2_LOOKBACK  = 300
-BULL_THRESHOLD   = 0.70
-BEAR_THRESHOLD   = 0.30
+BULL_THRESHOLD   = 0.70   # loosened from 0.80 → more entries (~3 trades/week like ZEN)
+BEAR_THRESHOLD   = 0.30   # loosened from 0.20 → more entries (~3 trades/week like ZEN)
 
 # ── STRATEGY TYPE ─────────────────────────────────────────────────────────
-POSITIONAL   = True
+POSITIONAL   = True    # True  = overnight hold (position carries to next day)
+                       # False = intraday only  (force exit same day)
 
 # ── TRADING HOURS (IST) ───────────────────────────────────────────────────
 MARKET_OPEN       = "09:15"
-TRADE_START       = "09:30"
-TRADE_END         = "14:00"
+TRADE_START       = "09:30"   # ZEN enters early — 9:30 AM after open settles
+TRADE_END         = "14:00"   # no new entries after this (position stays open overnight)
 MARKET_CLOSE      = "15:30"
-EXPIRY_EXIT_TIME  = "14:30"
+EXPIRY_EXIT_TIME  = "14:30"   # on expiry day, force-close position before this time
 SIGNAL_CHECK_MINS = 5
 
 # ── RISK ──────────────────────────────────────────────────────────────────
 CAPITAL            = 200000
 MAX_RISK_PER_TRADE = 0.05
-STOP_LOSS_PCT      = 0.50
-MAX_TRADES_PER_DAY = 1
-MAX_LOSS_PER_DAY   = 0.05
-PAPER_MODE         = False
+STOP_LOSS_PCT      = 0.50       # SL fires when sell leg rises 50% above entry
+MAX_TRADES_PER_DAY = 1          # ZEN = 1 active position at a time (positional)
+MAX_LOSS_PER_DAY   = 0.05       # 5% daily loss cap (ZEN avg loss = -4.42%)
+PAPER_MODE         = False      # False = LIVE via 1LY webhook (GitHub runs without --paper flag)
 
-# ── ENTRY FILTERS ─────────────────────────────────────────────────────────
-MIN_CREDIT_POINTS  = 20
-MIN_ATM_IV         = 10.0
-MIN_ATM_OI         = 0
-MAX_BID_ASK_PCT    = 0.25
+# ── ENTRY FILTERS (ZEN Credit Spread rules — pin to pin) ──────────────────
+MIN_CREDIT_POINTS  = 20         # ZEN takes lower credit too — reduced from 30
+MIN_ATM_IV         = 10.0       # skip if ATM IV < 10% (not worth selling)
+MIN_ATM_OI         = 0          # OI check disabled — Dhan API returns 0
+MAX_BID_ASK_PCT    = 0.25       # ZEN tolerates slightly wider spread — raised from 0.20
 
-# ── EXIT CONDITIONS ───────────────────────────────────────────────────────
-PROFIT_TARGET_PCT  = 0.50
-SIGNAL_EXIT        = True
+# ── EXIT CONDITIONS (ZEN Credit Spread rules — pin to pin) ────────────────
+PROFIT_TARGET_PCT  = 0.50       # exit when profit = 50% of max profit (lock gains)
+SIGNAL_EXIT        = True       # exit if signal reverses to opposite direction
+MIN_HOLD_HOURS     = 4          # minimum hold time before signal reversal exit allowed
+TRAILING_STOP      = True       # move SL to breakeven once 25% profit reached
+TRAIL_TRIGGER_PCT  = 0.25       # trigger trailing stop at 25% of max profit
+IV_SPIKE_EXIT      = True       # exit if ATM IV spikes >50% above entry IV (panic move)
+IV_SPIKE_PCT       = 0.50       # IV spike threshold
 
 # ── LOGGING ───────────────────────────────────────────────────────────────
 LOG_DIR   = "logs"
