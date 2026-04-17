@@ -61,7 +61,7 @@ PAPER_MODE         = False      # False = LIVE via 1LY webhook
 # ── ENTRY FILTERS (ZEN Credit Spread rules — pin to pin) ──────────────────
 MIN_CREDIT_POINTS  = 20         # ZEN takes lower credit too — reduced from 30
 MIN_ATM_IV         = 10.0       # skip if ATM IV < 10% (not worth selling)
-MIN_ATM_OI         = 500        # skip if ATM OI < 500 (illiquid strike)
+MIN_ATM_OI         = 0        # skip if ATM OI < 500 (illiquid strike)
 MAX_BID_ASK_PCT    = 0.25       # ZEN tolerates slightly wider spread — raised from 0.20
 
 # ── EXIT CONDITIONS (ZEN Credit Spread rules — pin to pin) ────────────────
