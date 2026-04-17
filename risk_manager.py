@@ -2,9 +2,10 @@
 # risk_manager.py — Position Sizing, Stop Loss, Daily Limits
 # ═══════════════════════════════════════════════════════════════════════════
 
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from logger import get_logger, log_pnl
 import config
+IST = timezone(timedelta(hours=5, minutes=30))
 
 log = get_logger("RiskManager")
 
@@ -24,7 +25,7 @@ class RiskManager:
         self.daily_pnl     = 0.0
         self.daily_pnl_pct = 0.0
         self.day_blocked   = False
-        self.date          = datetime.now().date()
+        self.date = datetime.now(IST).date()
         # NOTE: open_positions is intentionally NOT reset here.
         # In positional strategy, existing spreads carry over to the next day.
         log.info(f"Risk manager reset for {self.date} | "
@@ -49,7 +50,7 @@ class RiskManager:
             self.day_blocked = True
             return False, f"Daily loss limit {config.MAX_LOSS_PER_DAY*100:.1f}% breached"
 
-        now = datetime.now().strftime("%H:%M")
+        now = datetime.now(IST).strftime("%H:%M")
         if now < config.TRADE_START:
             return False, f"Too early — trading starts at {config.TRADE_START}"
         if now > config.TRADE_END:
