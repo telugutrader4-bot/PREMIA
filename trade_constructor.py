@@ -71,6 +71,7 @@ class TradeConstructor:
             "max_loss"            : max_loss,
             "breakeven"           : breakeven,
             "stop_loss_premium"   : round(sell_price * (1 + config.STOP_LOSS_PCT), 2),
+            "entry_iv"            : round(snap.get("atm_vol", 0) / 2, 2),  # ATM IV at entry (for IV spike exit)
             "timestamp"           : datetime.now().isoformat(),
         }
 
@@ -135,6 +136,7 @@ class TradeConstructor:
             "max_loss"            : max_loss,
             "breakeven"           : breakeven,
             "stop_loss_premium"   : round(sell_price * (1 + config.STOP_LOSS_PCT), 2),
+            "entry_iv"            : round(snap.get("atm_vol", 0) / 2, 2),  # ATM IV at entry (for IV spike exit)
             "timestamp"           : datetime.now().isoformat(),
         }
 
